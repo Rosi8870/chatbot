@@ -1,10 +1,18 @@
 require("dotenv").config();
+const cors = require("cors");
 const express = require("express");
 const axios = require("axios");
 const OpenAI = require("openai");
 
 const app = express();
 app.use(express.json());
+app.use(
+  cors({
+    origin: "*", // allow all origins (OK for learning)
+    methods: ["GET", "POST"],
+  })
+);
+
 
 // ================= CONFIG =================
 const TOKEN = process.env.BOT_TOKEN;

@@ -26,6 +26,12 @@ async function sendMessage(chatId, text, replyMarkup = null) {
   });
 }
 
+async function answerCallbackQuery(callbackId) {
+  await axios.post(`${TELEGRAM_API}/answerCallbackQuery`, {
+    callback_query_id: callbackId,
+  });
+}
+
 function randomItem(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -48,7 +54,9 @@ app.post("/webhook", async (req, res) => {
     const chatId = callback.message.chat.id;
     const data = callback.data;
 
-    // MAIN MENU
+    // ✅ REQUIRED: acknowledge button click
+    await answerCallbackQuery(callback.id);
+
     if (data === "ABOUT") {
       await sendMessage(
         chatId,
@@ -59,7 +67,7 @@ app.post("/webhook", async (req, res) => {
     else if (data === "HELP") {
       await sendMessage(
         chatId,
-        `❓ *Help*\n\n• Use buttons below\n• Ask anything\n• Type /start to open menu`
+        `❓ Help\n\n• Use buttons below\n• Ask anything\n• Type /start to open menu`
       );
     }
 
@@ -81,17 +89,16 @@ app.post("/webhook", async (req, res) => {
         ],
       };
 
-      await sendMessage(chatId, "🎮 *Fun & Games* 👇", funMenu);
+      await sendMessage(chatId, "🎮 Fun & Games 👇", funMenu);
     }
 
-    // FUN ACTIONS
     else if (data === "JOKE") {
       await sendMessage(chatId, randomItem(jokes));
     }
 
     else if (data === "DICE") {
       const dice = Math.floor(Math.random() * 6) + 1;
-      await sendMessage(chatId, `🎲 You rolled: *${dice}*`);
+      await sendMessage(chatId, `🎲 You rolled: ${dice}`);
     }
 
     else if (data === "COIN") {
@@ -101,7 +108,7 @@ app.post("/webhook", async (req, res) => {
 
     else if (data === "NUMBER") {
       const num = Math.floor(Math.random() * 100) + 1;
-      await sendMessage(chatId, `🔢 Random number: *${num}*`);
+      await sendMessage(chatId, `🔢 Random number: ${num}`);
     }
 
     return res.sendStatus(200);
@@ -115,7 +122,6 @@ app.post("/webhook", async (req, res) => {
   const text = userText?.toLowerCase();
 
   try {
-    // /start MENU
     if (text === "/start") {
       const menu = {
         inline_keyboard: [
@@ -137,19 +143,14 @@ app.post("/webhook", async (req, res) => {
       );
     }
 
-    // SIMPLE RULES
     else if (text === "hi" || text === "hello" || text === "hey") {
       await sendMessage(chatId, "Hello 👋 How can I help you?");
     }
 
-    else if (
-      text === "what is your name" ||
-      text === "who are you"
-    ) {
+    else if (text === "what is your name" || text === "who are you") {
       await sendMessage(chatId, `I am ${BOT_NAME} 😊`);
     }
 
-    // AI FALLBACK
     else {
       const aiResponse = await openai.chat.completions.create({
         model: "gpt-4o-mini",
@@ -162,10 +163,7 @@ app.post("/webhook", async (req, res) => {
         ],
       });
 
-      await sendMessage(
-        chatId,
-        aiResponse.choices[0].message.content
-      );
+      await sendMessage(chatId, aiResponse.choices[0].message.content);
     }
 
   } catch (err) {

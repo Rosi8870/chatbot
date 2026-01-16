@@ -1,57 +1,58 @@
 require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
-const OpenAI = require("openai");
 
 const app = express();
 app.use(express.json());
 
+// 🔹 CONFIG
 const TOKEN = process.env.BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const PORT = process.env.PORT || 3000;
 
-const PORT = 3000;
+// 🔹 CHANGE YOUR BOT NAME HERE
+const BOT_NAME = "RoshinthBot 🤖";
 
-// Telegram webhook
 app.post("/webhook", async (req, res) => {
   const message = req.body.message;
   if (!message) return res.sendStatus(200);
 
   const chatId = message.chat.id;
-  const text = message.text;
+  const text = message.text?.trim().toLowerCase();
 
-  let reply = "🤖 Something went wrong";
+  let reply = "🤖 Sorry, I didn't understand that.";
 
-  try {
-    if (text === "/start") {
-      reply = "Hello 👋\nI am an AI-powered Telegram bot 🤖";
-    } else {
-      // AI response
-      const aiResponse = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: text }],
-      });
-
-      reply = aiResponse.choices[0].message.content;
-    }
-
-    await axios.post(`${TELEGRAM_API}/sendMessage`, {
-      chat_id: chatId,
-      text: reply,
-    });
-
-  } catch (err) {
-    await axios.post(`${TELEGRAM_API}/sendMessage`, {
-      chat_id: chatId,
-      text: "⚠️ AI error. Try again later.",
-    });
+  // 👉 Start command
+  if (text === "/start") {
+    reply = `Hello 👋\nI am ${BOT_NAME}\nHow can I help you?`;
   }
+
+  // 👉 Bot name question
+  else if (
+    text === "what is your name" ||
+    text === "what's your name" ||
+    text === "who are you"
+  ) {
+    reply = `I am ${BOT_NAME}. Nice to meet you 😊`;
+  }
+
+  // 👉 Greetings
+  else if (
+    text === "hi" ||
+    text === "hello" ||
+    text === "hey"
+  ) {
+    reply = "Hello 👋 How can I help you today?";
+  }
+
+  await axios.post(`${TELEGRAM_API}/sendMessage`, {
+    chat_id: chatId,
+    text: reply,
+  });
 
   res.sendStatus(200);
 });
 
 app.listen(PORT, () => {
-  console.log("AI Bot running on port 3000");
+  console.log(`Telegram bot running on port ${PORT}`);
 });
